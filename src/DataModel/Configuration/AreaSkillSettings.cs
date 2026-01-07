@@ -38,6 +38,11 @@ public partial class AreaSkillSettings
     public bool UseTargetAreaFilter { get; set; }
 
     /// <summary>
+    /// Gets or sets a value indicating whether the target area center should be the caster position.
+    /// </summary>
+    public bool UseCasterAsCenter { get; set; }
+
+    /// <summary>
     /// Gets or sets the target area diameter.
     /// </summary>
     public float TargetAreaDiameter { get; set; }
@@ -72,6 +77,23 @@ public partial class AreaSkillSettings
     /// Gets or sets the maximum number of hits per attack.
     /// </summary>
     public int MaximumNumberOfHitsPerAttack { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of targets which are always hit when random target selection is enabled.
+    /// </summary>
+    public int GuaranteedTargets { get; set; }
+
+    /// <summary>
+    /// Gets or sets the maximum number of targets to consider for random selection.
+    /// A value of 0 disables random target selection.
+    /// </summary>
+    public int MaximumTargets { get; set; }
+
+    /// <summary>
+    /// Gets or sets the chance between 0 and 1 to hit targets beyond <see cref="GuaranteedTargets"/>
+    /// when random target selection is enabled.
+    /// </summary>
+    public float AdditionalTargetChance { get; set; } = 1.0f;
 
     /// <summary>
     /// Gets or sets the hit chance per distance multiplier.

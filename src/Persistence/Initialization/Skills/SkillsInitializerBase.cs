@@ -118,9 +118,13 @@ internal abstract class SkillsInitializerBase : InitializerBase
     /// <param name="maximumHitsPerTarget">The maximum hits per target.</param>
     /// <param name="maximumHitsPerAttack">The maximum hits per attack.</param>
     /// <param name="hitChancePerDistanceMultiplier">The hit chance per distance multiplier.</param>
-    /// <param name="useTargetAreaFilter">If set to <c>true</c>, the skill should use a target area filter.</param>
-    /// <param name="targetAreaDiameter">The target area diameter.</param>
-    /// <param name="projectileCount">The number of projectiles/arrows. When greater than 1, they are evenly distributed within the frustum.</param>
+        /// <param name="useTargetAreaFilter">If set to <c>true</c>, the skill should use a target area filter.</param>
+        /// <param name="targetAreaDiameter">The target area diameter.</param>
+        /// <param name="projectileCount">The number of projectiles/arrows. When greater than 1, they are evenly distributed within the frustum.</param>
+        /// <param name="guaranteedTargets">The number of targets which are always hit when random target selection is enabled.</param>
+        /// <param name="maximumTargets">The maximum number of targets to consider for random selection.</param>
+        /// <param name="additionalTargetChance">The chance between 0 and 1 to hit targets beyond the guaranteed ones.</param>
+        /// <param name="useCasterAsCenter">If set to <c>true</c>, the caster position is used as the target area center.</param>
     protected void AddAreaSkillSettings(
         SkillNumber skillNumber,
         bool useFrustumFilter,
@@ -136,7 +140,11 @@ internal abstract class SkillsInitializerBase : InitializerBase
         float hitChancePerDistanceMultiplier = 1.0f,
         bool useTargetAreaFilter = false,
         float targetAreaDiameter = default,
-        int projectileCount = 1)
+        int projectileCount = 1,
+        int guaranteedTargets = 0,
+        int maximumTargets = 0,
+        float additionalTargetChance = 1.0f,
+        bool useCasterAsCenter = false)
     {
         var skill = this.GameConfiguration.Skills.First(s => s.Number == (short)skillNumber);
         var areaSkillSettings = this.Context.CreateNew<AreaSkillSettings>();
@@ -156,6 +164,10 @@ internal abstract class SkillsInitializerBase : InitializerBase
         areaSkillSettings.MaximumNumberOfHitsPerAttack = maximumHitsPerAttack;
         areaSkillSettings.HitChancePerDistanceMultiplier = hitChancePerDistanceMultiplier;
         areaSkillSettings.ProjectileCount = projectileCount;
+        areaSkillSettings.GuaranteedTargets = guaranteedTargets;
+        areaSkillSettings.MaximumTargets = maximumTargets;
+        areaSkillSettings.AdditionalTargetChance = additionalTargetChance;
+        areaSkillSettings.UseCasterAsCenter = useCasterAsCenter;
     }
 
     private void ApplyElementalModifier(ElementalType elementalModifier, Skill skill)

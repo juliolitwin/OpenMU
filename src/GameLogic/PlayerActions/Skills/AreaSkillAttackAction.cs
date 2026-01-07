@@ -70,7 +70,10 @@ public class AreaSkillAttackAction
                && settings.MinimumNumberOfHitsPerTarget == 1
                && settings.MaximumNumberOfHitsPerTarget == 1
                && settings.MaximumNumberOfHitsPerAttack == 0
-               && Math.Abs(settings.HitChancePerDistanceMultiplier - 1.0) <= 0.00001f;
+               && Math.Abs(settings.HitChancePerDistanceMultiplier - 1.0) <= 0.00001f
+               && settings.GuaranteedTargets == 0
+               && settings.MaximumTargets == 0
+               && !settings.UseCasterAsCenter;
     }
 
     private static IEnumerable<IAttackable> GetTargets(Player player, Point targetAreaCenter, Skill skill, byte rotation, ushort extraTargetId)
@@ -113,21 +116,23 @@ public class AreaSkillAttackAction
 
     private static IEnumerable<IAttackable> GetTargetsInRange(Player player, Point targetAreaCenter, Skill skill, byte rotation)
     {
+        var areaSkillSettings = skill.AreaSkillSettings;
+        var center = areaSkillSettings?.UseCasterAsCenter == true ? player.Position : targetAreaCenter;
         var targetsInRange = player.CurrentMap?
-                    .GetAttackablesInRange(targetAreaCenter, skill.Range)
+                    .GetAttackablesInRange(center, skill.Range)
                     .Where(a => a != player)
                     .Where(a => !a.IsAtSafezone())
             ?? [];
 
-        if (skill.AreaSkillSettings is { UseFrustumFilter: true } areaSkillSettings)
+        if (areaSkillSettings is { UseFrustumFilter: true })
         {
             var filter = FrustumFilters.GetOrAdd(areaSkillSettings, static s => new FrustumBasedTargetFilter(s.FrustumStartWidth, s.FrustumEndWidth, s.FrustumDistance, s.ProjectileCount > 0 ? s.ProjectileCount : 1));
             targetsInRange = targetsInRange.Where(a => filter.IsTargetWithinBounds(player, a, rotation));
         }
 
-        if (skill.AreaSkillSettings is { UseTargetAreaFilter: true })
+        if (areaSkillSettings is { UseTargetAreaFilter: true })
         {
-            targetsInRange = targetsInRange.Where(a => a.GetDistanceTo(targetAreaCenter) < skill.AreaSkillSettings.TargetAreaDiameter * 0.5f);
+            targetsInRange = targetsInRange.Where(a => a.GetDistanceTo(center) < areaSkillSettings.TargetAreaDiameter * 0.5f);
         }
 
         if (!player.GameContext.Configuration.AreaSkillHitsPlayer)
@@ -236,6 +241,8 @@ public class AreaSkillAttackAction
             }
         }
 
+        orderedTargets = ApplyRandomTargetSelection(orderedTargets, areaSkillSettings);
+
         // Process each projectile separately
         for (int projectileIndex = 0; projectileIndex < projectileCount; projectileIndex++)
         {
@@ -315,6 +322,53 @@ public class AreaSkillAttackAction
         }
 
         return extraTarget;
+    }
+
+    private static List<IAttackable> ApplyRandomTargetSelection(List<IAttackable> orderedTargets, AreaSkillSettings areaSkillSettings)
+    {
+        if (areaSkillSettings.MaximumTargets <= 0)
+        {
+            return orderedTargets;
+        }
+
+        var maximumTargets = areaSkillSettings.MaximumTargets;
+        var guaranteedTargets = areaSkillSettings.GuaranteedTargets;
+        if (guaranteedTargets < 0)
+        {
+            guaranteedTargets = 0;
+        }
+
+        if (maximumTargets < guaranteedTargets)
+        {
+            maximumTargets = guaranteedTargets;
+        }
+
+        var additionalChance = areaSkillSettings.AdditionalTargetChance;
+        if (additionalChance < 0)
+        {
+            additionalChance = 0;
+        }
+        else if (additionalChance > 1)
+        {
+            additionalChance = 1;
+        }
+
+        var selectedTargets = new List<IAttackable>(Math.Min(maximumTargets, orderedTargets.Count));
+        for (int i = 0; i < orderedTargets.Count && i < maximumTargets; i++)
+        {
+            var shouldHit = i < guaranteedTargets;
+            if (!shouldHit && Rand.NextRandomBool(additionalChance))
+            {
+                shouldHit = true;
+            }
+
+            if (shouldHit)
+            {
+                selectedTargets.Add(orderedTargets[i]);
+            }
+        }
+
+        return selectedTargets;
     }
 
     private async ValueTask ApplySkillAsync(Player player, SkillEntry skillEntry, IAttackable target, Point targetAreaCenter, bool isCombo)

@@ -98,7 +98,11 @@ public class AddAreaSkillSettingsUpdatePlugIn : UpdatePlugInBase
         float hitChancePerDistanceMultiplier = 1.0f,
         bool useTargetAreaFilter = false,
         float targetAreaDiameter = default,
-        short? newRange = null)
+        short? newRange = null,
+        int guaranteedTargets = 0,
+        int maximumTargets = 0,
+        float additionalTargetChance = 1.0f,
+        bool useCasterAsCenter = false)
     {
         var skill = gameConfiguration.Skills.First(s => s.Number == (short)skillNumber);
         var areaSkillSettings = context.CreateNew<AreaSkillSettings>();
@@ -123,5 +127,9 @@ public class AddAreaSkillSettingsUpdatePlugIn : UpdatePlugInBase
         areaSkillSettings.MaximumNumberOfHitsPerTarget = maximumHitsPerTarget;
         areaSkillSettings.MaximumNumberOfHitsPerAttack = maximumHitsPerAttack;
         areaSkillSettings.HitChancePerDistanceMultiplier = hitChancePerDistanceMultiplier;
+        areaSkillSettings.GuaranteedTargets = guaranteedTargets;
+        areaSkillSettings.MaximumTargets = maximumTargets;
+        areaSkillSettings.AdditionalTargetChance = additionalTargetChance;
+        areaSkillSettings.UseCasterAsCenter = useCasterAsCenter;
     }
 }
