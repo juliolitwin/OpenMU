@@ -48,26 +48,48 @@ public class AddAreaSkillSettingsUpdatePlugIn : UpdatePlugInBase
     protected override async ValueTask ApplyAsync(IContext context, GameConfiguration gameConfiguration)
     {
         this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.Flame, false, default, default, default, true, TimeSpan.Zero, TimeSpan.FromMilliseconds(500), 0, 2, default, 0.5f, targetAreaDiameter: 2, useTargetAreaFilter: true);
-        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.Twister, true, 1.5f, 1.5f, 4f, true, TimeSpan.FromMilliseconds(300), TimeSpan.FromMilliseconds(1000), 0, 2, default, 0.7f);
+        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.Twister, true, 1.5f, 1.5f, 4f, true, TimeSpan.FromMilliseconds(300), TimeSpan.FromMilliseconds(1000), 0, 2, default, 0.7f, useCasterAsCenter: true);
         this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.EvilSpirit, false, default, default, default, true, TimeSpan.FromMilliseconds(100), TimeSpan.FromMilliseconds(1000), 0, 2, default, 0.7f, newRange: 7);
-        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.AquaBeam, true, 1.5f, 1.5f, 8f);
+        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.AquaBeam, true, 1.5f, 1.5f, 8f, useCasterAsCenter: true);
         this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.Cometfall, false, default, default, default, targetAreaDiameter: 2, useTargetAreaFilter: true);
-        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.TripleShot, true, 1f, 4.5f, 7f, true, TimeSpan.FromMilliseconds(50), maximumHitsPerTarget: 3, maximumHitsPerAttack: 3);
-        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.IceStorm, false, default, default, default, true, TimeSpan.Zero, TimeSpan.FromMilliseconds(200), targetAreaDiameter: 3, useTargetAreaFilter: true);
-        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.Penetration, true, 1.1f, 1.2f, 8f, useDeferredHits: true, delayPerOneDistance: TimeSpan.FromMilliseconds(50));
-        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.FireSlash, true, 1.5f, 2, 2);
-        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.PowerSlash, true, 1.0f, 6.0f, 6.0f, guaranteedTargets: 5, maximumTargets: 10, additionalTargetChance: 0.5f);
-        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.ElectricSpike, true, 1.5f, 1.5f, 12f, useDeferredHits: true, delayPerOneDistance: TimeSpan.FromMilliseconds(10));
-        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.ForceWave, true, 1f, 1f, 4f);
-        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.Stun, true, 1.5f, 1.5f, 3f);
-        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.FireScream, true, 2f, 3f, 6f);
+        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.TripleShot, true, 1f, 4.5f, 7f, true, TimeSpan.FromMilliseconds(50), maximumHitsPerTarget: 3, maximumHitsPerAttack: 3, projectileCount: 3, useCasterAsCenter: true);
+        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.Decay, false, default, default, default, useTargetAreaFilter: true, targetAreaDiameter: 8, randomDelayPerHitMaximum: TimeSpan.FromMilliseconds(500));
+        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.IceStorm, false, default, default, default, useTargetAreaFilter: true, targetAreaDiameter: 8);
+        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.Penetration, true, 1.1f, 1.2f, 8f, useDeferredHits: true, delayPerOneDistance: TimeSpan.FromMilliseconds(50), useCasterAsCenter: true);
+        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.FireSlash, true, 1.5f, 2, 2, useCasterAsCenter: true);
+        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.PowerSlash, true, 1.0f, 6.0f, 6.0f, guaranteedTargets: 5, maximumTargets: 10, additionalTargetChance: 0.5f, useCasterAsCenter: true);
+        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.Earthshake, false, 0, 0, 0, newRange: 5, useCasterAsCenter: true, useEuclideanRange: true, delayPerHit: TimeSpan.FromMilliseconds(500));
+        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.ElectricSpike, true, 1.5f, 1.5f, 12f, useCasterAsCenter: true, delayPerHit: TimeSpan.FromMilliseconds(500));
+        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.ForceWave, true, 1f, 1f, 4f, useCasterAsCenter: true);
+        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.Stun, true, 1.5f, 1.5f, 4f, newRange: 4, skillTypeOverride: SkillType.Buff, useCasterAsCenter: true, useEuclideanRange: true);
+        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.DrainLife, false, 0, 0, 0, skillTypeOverride: null, delayPerHit: TimeSpan.FromMilliseconds(700));
+        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.ChainLightning, false, 0, 0, 0, skillTypeOverride: null, delayPerHit: TimeSpan.FromMilliseconds(200));
+        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.Explosion223, false, 0, 0, 0, useTargetAreaFilter: true, targetAreaDiameter: 4, useTargetAreaSquare: true, requireTargetAreaCenterInRange: true, delayPerHit: TimeSpan.FromMilliseconds(1000));
+        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.Requiem, false, 0, 0, 0, useTargetAreaFilter: true, targetAreaDiameter: 4, useTargetAreaSquare: true, requireTargetAreaCenterInRange: true, delayPerHit: TimeSpan.FromMilliseconds(1000));
         this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.Pollution, false, 0, 0, 0, useTargetAreaFilter: true, targetAreaDiameter: 6, guaranteedTargets: 4, maximumTargets: 8, additionalTargetChance: 0.5f, useTargetAreaSquare: true, requireTargetAreaCenterInRange: true);
         this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.LightningShock, false, 0, 0, 0, maximumHitsPerAttack: 12, guaranteedTargets: 5, maximumTargets: 12, additionalTargetChance: 0.5f, useCasterAsCenter: true, useEuclideanRange: true, delayPerHit: TimeSpan.FromMilliseconds(250));
         this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.StrikeofDestruction, false, 0, 0, 0, useTargetAreaFilter: true, targetAreaDiameter: 6, guaranteedTargets: 4, maximumTargets: 8, additionalTargetChance: 0.5f, useTargetAreaSquare: true, requireTargetAreaCenterInRange: true, delayPerHit: TimeSpan.FromMilliseconds(500));
-        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.MultiShot, true, 1f, 6f, 7f, projectileCount: 5);
-        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.FlameStrike, true, 5f, 2f, 4f, minimumHitsPerTarget: 2, maximumHitsPerTarget: 2, guaranteedTargets: 8, additionalTargetChance: 0.5f);
+        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.PlasmaStorm, false, 0, 0, 0, maximumHitsPerAttack: 5, useCasterAsCenter: true, useEuclideanRange: true, delayPerHit: TimeSpan.FromMilliseconds(300));
+        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.TwistingSlash, false, 0, 0, 0, newRange: 3, useCasterAsCenter: true, useEuclideanRange: true);
+        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.RagefulBlow, false, 0, 0, 0, newRange: 4, useCasterAsCenter: true, useEuclideanRange: true, delayPerHit: TimeSpan.FromMilliseconds(500));
+        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.DragonRoar, false, 0, 0, 0, minimumHitsPerTarget: 4, maximumHitsPerTarget: 4, guaranteedTargets: 4, maximumTargets: 8, additionalTargetChance: 0.5f, useTargetAreaFilter: true, targetAreaDiameter: 6, useTargetAreaSquare: true, requireTargetAreaCenterInRange: true);
+        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.PhoenixShot, false, 0, 0, 0, skillTypeOverride: SkillType.AreaSkillAutomaticHits, minimumHitsPerTarget: 4, maximumHitsPerTarget: 4, guaranteedTargets: 4, maximumTargets: 8, additionalTargetChance: 0.5f, useTargetAreaFilter: true, targetAreaDiameter: 4, useTargetAreaSquare: true, requireTargetAreaCenterInRange: true);
+        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.MultiShot, true, 1f, 6f, 7f, projectileCount: 5, useCasterAsCenter: true);
+        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.FlameStrike, true, 5f, 2f, 4f, minimumHitsPerTarget: 2, maximumHitsPerTarget: 2, guaranteedTargets: 8, additionalTargetChance: 0.5f, useCasterAsCenter: true);
         this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.GiganticStorm, false, 0, 0, 0, useTargetAreaFilter: true, targetAreaDiameter: 12, guaranteedTargets: 8, maximumTargets: 12, additionalTargetChance: 0.5f, useTargetAreaSquare: true, requireTargetAreaCenterInRange: true, delayPerHit: TimeSpan.FromMilliseconds(400));
-        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.ChaoticDiseier, true, 1.5f, 1.5f, 6f, guaranteedTargets: 8, additionalTargetChance: 0.5f, delayPerHit: TimeSpan.FromMilliseconds(200), explicitTargetAdditionalHits: 1, explicitTargetAdditionalHitDelay: TimeSpan.FromMilliseconds(300));
+        this.AddAreaSkillSettings(gameConfiguration, context, SkillNumber.ChaoticDiseier, true, 1.5f, 1.5f, 6f, guaranteedTargets: 8, additionalTargetChance: 0.5f, delayPerHit: TimeSpan.FromMilliseconds(200), explicitTargetAdditionalHits: 1, explicitTargetAdditionalHitDelay: TimeSpan.FromMilliseconds(300), useCasterAsCenter: true);
+
+        if (gameConfiguration.Skills.FirstOrDefault(s => s.Number == (short)SkillNumber.FireScream) is { } fireScream)
+        {
+            fireScream.SkillType = SkillType.DirectHit;
+            fireScream.AreaSkillSettings = null;
+        }
+
+        foreach (var skill in gameConfiguration.Skills.Where(s => s.MasterDefinition?.ReplacedSkill?.Number == (short)SkillNumber.FireScream))
+        {
+            skill.SkillType = SkillType.DirectHit;
+            skill.AreaSkillSettings = null;
+        }
 
         // Fix master skills as well:
         foreach (var skill in gameConfiguration.Skills.OrderBy(s => s.Number))
@@ -104,6 +126,7 @@ public class AddAreaSkillSettingsUpdatePlugIn : UpdatePlugInBase
         float targetAreaDiameter = default,
         int projectileCount = 1,
         short? newRange = null,
+        SkillType? skillTypeOverride = SkillType.AreaSkillAutomaticHits,
         int guaranteedTargets = 0,
         int maximumTargets = 0,
         float additionalTargetChance = 1.0f,
@@ -112,13 +135,18 @@ public class AddAreaSkillSettingsUpdatePlugIn : UpdatePlugInBase
         bool requireTargetAreaCenterInRange = false,
         bool useEuclideanRange = false,
         TimeSpan delayPerHit = default,
+        TimeSpan randomDelayPerHitMinimum = default,
+        TimeSpan randomDelayPerHitMaximum = default,
         int explicitTargetAdditionalHits = 0,
         TimeSpan explicitTargetAdditionalHitDelay = default)
     {
         var skill = gameConfiguration.Skills.First(s => s.Number == (short)skillNumber);
         var areaSkillSettings = context.CreateNew<AreaSkillSettings>();
         skill.AreaSkillSettings = areaSkillSettings;
-        skill.SkillType = SkillType.AreaSkillAutomaticHits;
+        if (skillTypeOverride.HasValue)
+        {
+            skill.SkillType = skillTypeOverride.Value;
+        }
 
         if (newRange.HasValue)
         {
@@ -136,6 +164,8 @@ public class AddAreaSkillSettingsUpdatePlugIn : UpdatePlugInBase
         areaSkillSettings.DelayPerOneDistance = delayPerOneDistance;
         areaSkillSettings.DelayBetweenHits = delayBetweenHits;
         areaSkillSettings.DelayPerHit = delayPerHit;
+        areaSkillSettings.RandomDelayPerHitMinimum = randomDelayPerHitMinimum;
+        areaSkillSettings.RandomDelayPerHitMaximum = randomDelayPerHitMaximum;
         areaSkillSettings.MinimumNumberOfHitsPerTarget = minimumHitsPerTarget;
         areaSkillSettings.MaximumNumberOfHitsPerTarget = maximumHitsPerTarget;
         areaSkillSettings.MaximumNumberOfHitsPerAttack = maximumHitsPerAttack;

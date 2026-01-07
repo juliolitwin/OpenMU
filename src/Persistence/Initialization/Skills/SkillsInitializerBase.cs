@@ -129,6 +129,8 @@ internal abstract class SkillsInitializerBase : InitializerBase
     /// <param name="requireTargetAreaCenterInRange">If set to <c>true</c>, the target area center must be in range of the caster.</param>
     /// <param name="useEuclideanRange">If set to <c>true</c>, euclidean range checks are enforced when selecting targets.</param>
     /// <param name="delayPerHit">The fixed delay which is applied to each hit.</param>
+    /// <param name="randomDelayPerHitMinimum">The minimum random delay which is applied to each hit.</param>
+    /// <param name="randomDelayPerHitMaximum">The maximum random delay which is applied to each hit.</param>
     /// <param name="explicitTargetAdditionalHits">The number of additional hits which are only applied to the explicit target.</param>
     /// <param name="explicitTargetAdditionalHitDelay">The delay for additional hits on the explicit target.</param>
     protected void AddAreaSkillSettings(
@@ -155,6 +157,8 @@ internal abstract class SkillsInitializerBase : InitializerBase
         bool requireTargetAreaCenterInRange = false,
         bool useEuclideanRange = false,
         TimeSpan delayPerHit = default,
+        TimeSpan randomDelayPerHitMinimum = default,
+        TimeSpan randomDelayPerHitMaximum = default,
         int explicitTargetAdditionalHits = 0,
         TimeSpan explicitTargetAdditionalHitDelay = default)
     {
@@ -173,6 +177,8 @@ internal abstract class SkillsInitializerBase : InitializerBase
         areaSkillSettings.DelayPerOneDistance = delayPerOneDistance;
         areaSkillSettings.DelayBetweenHits = delayBetweenHits;
         areaSkillSettings.DelayPerHit = delayPerHit;
+        areaSkillSettings.RandomDelayPerHitMinimum = randomDelayPerHitMinimum;
+        areaSkillSettings.RandomDelayPerHitMaximum = randomDelayPerHitMaximum;
         areaSkillSettings.MinimumNumberOfHitsPerTarget = minimumHitsPerTarget;
         areaSkillSettings.MaximumNumberOfHitsPerTarget = maximumHitsPerTarget;
         areaSkillSettings.MaximumNumberOfHitsPerAttack = maximumHitsPerAttack;

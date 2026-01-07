@@ -71,6 +71,7 @@ internal class SkillsInitializer : SkillsInitializerBase
         { SkillNumber.Weakness, MagicEffectNumber.WeaknessSummoner },
         { SkillNumber.Innovation, MagicEffectNumber.Innovation },
         { SkillNumber.DamageReflection, MagicEffectNumber.Reflection },
+        { SkillNumber.Stun, MagicEffectNumber.Stunned },
     };
 
     private readonly IDictionary<byte, MasterSkillRoot> _masterSkillRoots;
@@ -104,13 +105,13 @@ internal class SkillsInitializer : SkillsInitializerBase
         this.CreateSkill(SkillNumber.Teleport, "Teleport", CharacterClasses.SoulMasterAndGrandMaster, DamageType.Wizardry, distance: 6, manaConsumption: 30, energyRequirement: 88, skillType: SkillType.Other);
         this.CreateSkill(SkillNumber.Ice, "Ice", CharacterClasses.AllMagicians | CharacterClasses.AllSummoners, DamageType.Wizardry, 10, 6, manaConsumption: 38, energyRequirement: 120, elementalModifier: ElementalType.Ice);
         this.CreateSkill(SkillNumber.Twister, "Twister", CharacterClasses.AllMagicians, DamageType.Wizardry, 35, 6, manaConsumption: 60, energyRequirement: 180, elementalModifier: ElementalType.Wind, skillType: SkillType.AreaSkillAutomaticHits);
-        this.AddAreaSkillSettings(SkillNumber.Twister, true, 1.5f, 1.5f, 4f, true, TimeSpan.FromMilliseconds(300), TimeSpan.FromMilliseconds(1000), 0, 2, default, 0.7f);
+        this.AddAreaSkillSettings(SkillNumber.Twister, true, 1.5f, 1.5f, 4f, true, TimeSpan.FromMilliseconds(300), TimeSpan.FromMilliseconds(1000), 0, 2, default, 0.7f, useCasterAsCenter: true);
         this.CreateSkill(SkillNumber.EvilSpirit, "Evil Spirit", CharacterClasses.AllMagicians, DamageType.Wizardry, 45, 7, manaConsumption: 90, energyRequirement: 220, skillType: SkillType.AreaSkillAutomaticHits);
         this.AddAreaSkillSettings(SkillNumber.EvilSpirit, false, default, default, default, true, TimeSpan.FromMilliseconds(100), TimeSpan.FromMilliseconds(1000), 0, 2, default, 0.7f);
         this.CreateSkill(SkillNumber.Hellfire, "Hellfire", CharacterClasses.AllMagicians, DamageType.Wizardry, 120, 4, manaConsumption: 160, energyRequirement: 260, elementalModifier: ElementalType.Fire, skillType: SkillType.AreaSkillAutomaticHits);
         this.CreateSkill(SkillNumber.PowerWave, "Power Wave", CharacterClasses.AllMagicians | CharacterClasses.AllSummoners, DamageType.Wizardry, 14, 6, manaConsumption: 5, energyRequirement: 56);
         this.CreateSkill(SkillNumber.AquaBeam, "Aqua Beam", CharacterClasses.AllMagicians, DamageType.Wizardry, 80, 6, manaConsumption: 140, energyRequirement: 345, elementalModifier: ElementalType.Water, skillType: SkillType.AreaSkillAutomaticHits);
-        this.AddAreaSkillSettings(SkillNumber.AquaBeam, true, 1.5f, 1.5f, 8f);
+        this.AddAreaSkillSettings(SkillNumber.AquaBeam, true, 1.5f, 1.5f, 8f, useCasterAsCenter: true);
         this.CreateSkill(SkillNumber.Cometfall, "Cometfall", CharacterClasses.AllMagicians, DamageType.Wizardry, 70, 3, manaConsumption: 150, energyRequirement: 436, skillType: SkillType.AreaSkillAutomaticHits);
         this.AddAreaSkillSettings(SkillNumber.Cometfall, false, default, default, default, targetAreaDiameter: 2, useTargetAreaFilter: true);
         this.CreateSkill(SkillNumber.Inferno, "Inferno", CharacterClasses.AllMagicians, DamageType.Wizardry, 100, 4, manaConsumption: 200, energyRequirement: 578, elementalModifier: ElementalType.Fire, skillType: SkillType.AreaSkillAutomaticHits);
@@ -124,7 +125,7 @@ internal class SkillsInitializer : SkillsInitializerBase
         this.CreateSkill(SkillNumber.Cyclone, "Cyclone", CharacterClasses.AllKnightsLordsAndMGs, DamageType.Physical, distance: 2, manaConsumption: 9, movesToTarget: true, movesTarget: true);
         this.CreateSkill(SkillNumber.Slash, "Slash", CharacterClasses.AllKnightsLordsAndMGs, DamageType.Physical, distance: 2, manaConsumption: 10, movesToTarget: true, movesTarget: true);
         this.CreateSkill(SkillNumber.TripleShot, "Triple Shot", CharacterClasses.AllElfs, DamageType.Physical, distance: 6, manaConsumption: 5, skillType: SkillType.AreaSkillAutomaticHits);
-        this.AddAreaSkillSettings(SkillNumber.TripleShot, true, 1f, 4.5f, 7f, true, TimeSpan.FromMilliseconds(50), maximumHitsPerTarget: 3, maximumHitsPerAttack: 3, projectileCount: 3);
+        this.AddAreaSkillSettings(SkillNumber.TripleShot, true, 1f, 4.5f, 7f, true, TimeSpan.FromMilliseconds(50), maximumHitsPerTarget: 3, maximumHitsPerAttack: 3, projectileCount: 3, useCasterAsCenter: true);
         this.CreateSkill(SkillNumber.Heal, "Heal", CharacterClasses.AllElfs, distance: 6, manaConsumption: 20, energyRequirement: 52, skillType: SkillType.Regeneration, targetRestriction: SkillTargetRestriction.Player);
         this.CreateSkill(SkillNumber.GreaterDefense, "Greater Defense", CharacterClasses.AllElfs, distance: 6, manaConsumption: 30, energyRequirement: 72, skillType: SkillType.Buff, targetRestriction: SkillTargetRestriction.Player);
         this.CreateSkill(SkillNumber.GreaterDamage, "Greater Damage", CharacterClasses.AllElfs, distance: 6, manaConsumption: 40, energyRequirement: 92, skillType: SkillType.Buff, targetRestriction: SkillTargetRestriction.Player);
@@ -136,12 +137,15 @@ internal class SkillsInitializer : SkillsInitializerBase
         this.CreateSkill(SkillNumber.SummonBali, "Summon Bali", CharacterClasses.AllElfs, manaConsumption: 250, energyRequirement: 260, skillType: SkillType.SummonMonster);
         this.CreateSkill(SkillNumber.SummonSoldier, "Summon Soldier", CharacterClasses.AllElfs, manaConsumption: 350, energyRequirement: 280, skillType: SkillType.SummonMonster);
         this.CreateSkill(SkillNumber.Decay, "Decay", CharacterClasses.SoulMasterAndGrandMaster, DamageType.Wizardry, 95, 6, 7, 110, energyRequirement: 953, elementalModifier: ElementalType.Poison, skillType: SkillType.AreaSkillAutomaticHits);
+        this.AddAreaSkillSettings(SkillNumber.Decay, false, default, default, default, useTargetAreaFilter: true, targetAreaDiameter: 8, randomDelayPerHitMaximum: TimeSpan.FromMilliseconds(500));
         this.CreateSkill(SkillNumber.IceStorm, "Ice Storm", CharacterClasses.SoulMasterAndGrandMaster, DamageType.Wizardry, 80, 6, 5, 100, energyRequirement: 849, elementalModifier: ElementalType.Ice, skillType: SkillType.AreaSkillAutomaticHits);
-        this.AddAreaSkillSettings(SkillNumber.IceStorm, false, default, default, default, true, TimeSpan.Zero, TimeSpan.FromMilliseconds(200), targetAreaDiameter: 3, useTargetAreaFilter: true);
+        this.AddAreaSkillSettings(SkillNumber.IceStorm, false, default, default, default, useTargetAreaFilter: true, targetAreaDiameter: 8);
         this.CreateSkill(SkillNumber.Nova, "Nova", CharacterClasses.SoulMasterAndGrandMaster, DamageType.Wizardry, distance: 6, manaConsumption: 180 / 12 /* mana per stage */, levelRequirement: 100, energyRequirement: 1052, elementalModifier: ElementalType.Fire);
         this.CreateSkill(SkillNumber.NovaStart, "Nova (Start)", CharacterClasses.SoulMasterAndGrandMaster, DamageType.None, abilityConsumption: 45, levelRequirement: 100, energyRequirement: 1052, skillType: SkillType.Other);
-        this.CreateSkill(SkillNumber.TwistingSlash, "Twisting Slash", CharacterClasses.AllKnights | CharacterClasses.AllMGs, DamageType.Physical, distance: 2, abilityConsumption: 10, manaConsumption: 10, elementalModifier: ElementalType.Wind, skillType: SkillType.AreaSkillAutomaticHits);
-        this.CreateSkill(SkillNumber.RagefulBlow, "Rageful Blow", CharacterClasses.BladeKnightAndBladeMaster, DamageType.Physical, 60, 3, 20, 25, 170, elementalModifier: ElementalType.Earth, skillType: SkillType.AreaSkillAutomaticHits);
+        this.CreateSkill(SkillNumber.TwistingSlash, "Twisting Slash", CharacterClasses.AllKnights | CharacterClasses.AllMGs, DamageType.Physical, distance: 3, abilityConsumption: 10, manaConsumption: 10, elementalModifier: ElementalType.Wind, skillType: SkillType.AreaSkillAutomaticHits);
+        this.AddAreaSkillSettings(SkillNumber.TwistingSlash, false, 0, 0, 0, useCasterAsCenter: true, useEuclideanRange: true);
+        this.CreateSkill(SkillNumber.RagefulBlow, "Rageful Blow", CharacterClasses.BladeKnightAndBladeMaster, DamageType.Physical, 60, 4, 20, 25, 170, elementalModifier: ElementalType.Earth, skillType: SkillType.AreaSkillAutomaticHits);
+        this.AddAreaSkillSettings(SkillNumber.RagefulBlow, false, 0, 0, 0, useCasterAsCenter: true, useEuclideanRange: true, delayPerHit: TimeSpan.FromMilliseconds(500));
         this.CreateSkill(SkillNumber.DeathStab, "Death Stab", CharacterClasses.BladeKnightAndBladeMaster, DamageType.Physical, 70, 2, 12, 15, 160, elementalModifier: ElementalType.Wind, skillType: SkillType.DirectHit, skillTarget: SkillTarget.ExplicitWithImplicitInRange, implicitTargetRange: 1);
         this.CreateSkill(SkillNumber.CrescentMoonSlash, "Crescent Moon Slash", CharacterClasses.AllKnights, DamageType.Physical, 90, 4, 15, 22, movesToTarget: true, movesTarget: true);
         this.CreateSkill(SkillNumber.Lance, "Lance", CharacterClasses.SoulMasterAndGrandMaster | CharacterClasses.AllSummoners, DamageType.Wizardry, 90, 6, 10, 150);
@@ -152,23 +156,24 @@ internal class SkillsInitializer : SkillsInitializerBase
         this.CreateSkill(SkillNumber.FlameofEvil, "Flame of Evil (Monster)", damage: 120, manaConsumption: 160, levelRequirement: 60, energyRequirement: 100);
         this.CreateSkill(SkillNumber.IceArrow, "Ice Arrow", CharacterClasses.MuseElfAndHighElf, DamageType.Physical, 105, 8, 12, 10, elementalModifier: ElementalType.Ice);
         this.CreateSkill(SkillNumber.Penetration, "Penetration", CharacterClasses.AllElfs, DamageType.Physical, 70, 6, 9, 7, 130, elementalModifier: ElementalType.Wind, skillType: SkillType.AreaSkillAutomaticHits);
-        this.AddAreaSkillSettings(SkillNumber.Penetration, true, 1.1f, 1.2f, 8f, useDeferredHits: true, delayPerOneDistance: TimeSpan.FromMilliseconds(50));
+        this.AddAreaSkillSettings(SkillNumber.Penetration, true, 1.1f, 1.2f, 8f, useDeferredHits: true, delayPerOneDistance: TimeSpan.FromMilliseconds(50), useCasterAsCenter: true);
         this.CreateSkill(SkillNumber.FireSlash, "Fire Slash", CharacterClasses.AllMGs, DamageType.Physical, 80, 2, 20, 15, elementalModifier: ElementalType.Fire, skillType: SkillType.AreaSkillAutomaticHits);
-        this.AddAreaSkillSettings(SkillNumber.FireSlash, true, 1.5f, 2, 2);
+        this.AddAreaSkillSettings(SkillNumber.FireSlash, true, 1.5f, 2, 2, useCasterAsCenter: true);
         this.CreateSkill(SkillNumber.PowerSlash, "Power Slash", CharacterClasses.AllMGs, DamageType.Physical, distance: 5, manaConsumption: 15, skillType: SkillType.AreaSkillAutomaticHits);
-        this.AddAreaSkillSettings(SkillNumber.PowerSlash, true, 1.0f, 6.0f, 6.0f, guaranteedTargets: 5, maximumTargets: 10, additionalTargetChance: 0.5f);
+        this.AddAreaSkillSettings(SkillNumber.PowerSlash, true, 1.0f, 6.0f, 6.0f, guaranteedTargets: 5, maximumTargets: 10, additionalTargetChance: 0.5f, useCasterAsCenter: true);
         this.CreateSkill(SkillNumber.SpiralSlash, "Spiral Slash", CharacterClasses.AllMGs, DamageType.Physical, 75, 5, 15, 20);
         this.CreateSkill(SkillNumber.Force, "Force", CharacterClasses.AllLords, DamageType.Physical, 10, 4, manaConsumption: 10);
         this.CreateSkill(SkillNumber.FireBurst, "Fire Burst", CharacterClasses.AllLords, DamageType.Physical, 100, 6, manaConsumption: 25, energyRequirement: 79, skillTarget: SkillTarget.ExplicitWithImplicitInRange, implicitTargetRange: 1);
-        this.CreateSkill(SkillNumber.Earthshake, "Earthshake", CharacterClasses.AllLords, DamageType.Physical, 150, 10, 50, elementalModifier: ElementalType.Lightning, skillType: SkillType.AreaSkillAutomaticHits);
+        this.CreateSkill(SkillNumber.Earthshake, "Earthshake", CharacterClasses.AllLords, DamageType.Physical, 150, 5, 50, elementalModifier: ElementalType.Lightning, skillType: SkillType.AreaSkillAutomaticHits);
+        this.AddAreaSkillSettings(SkillNumber.Earthshake, false, 0, 0, 0, useCasterAsCenter: true, useEuclideanRange: true, delayPerHit: TimeSpan.FromMilliseconds(500));
         this.CreateSkill(SkillNumber.Summon, "Summon", CharacterClasses.AllLords, abilityConsumption: 30, manaConsumption: 70, energyRequirement: 153, leadershipRequirement: 400, skillType: SkillType.Other);
         this.CreateSkill(SkillNumber.IncreaseCriticalDamage, "Increase Critical Damage", CharacterClasses.AllLords, abilityConsumption: 50, manaConsumption: 50, energyRequirement: 102, leadershipRequirement: 300, skillType: SkillType.Buff, skillTarget: SkillTarget.ImplicitParty);
         this.CreateSkill(SkillNumber.ElectricSpike, "Electric Spike", CharacterClasses.AllLords, DamageType.Physical, 250, 10, 100, energyRequirement: 126, leadershipRequirement: 340, skillType: SkillType.AreaSkillAutomaticHits);
-        this.AddAreaSkillSettings(SkillNumber.ElectricSpike, true, 1.5f, 1.5f, 12f, useDeferredHits: true, delayPerOneDistance: TimeSpan.FromMilliseconds(10));
+        this.AddAreaSkillSettings(SkillNumber.ElectricSpike, true, 1.5f, 1.5f, 12f, useCasterAsCenter: true, delayPerHit: TimeSpan.FromMilliseconds(500));
         this.CreateSkill(SkillNumber.ForceWave, "Force Wave", CharacterClasses.AllLords, DamageType.Physical, 50, 4, manaConsumption: 10, skillTarget: SkillTarget.ExplicitWithImplicitInRange);
-        this.AddAreaSkillSettings(SkillNumber.ForceWave, true, 1f, 1f, 4f);
-        this.CreateSkill(SkillNumber.Stun, "Stun", CharacterClasses.All, distance: 2, abilityConsumption: 50, manaConsumption: 70, skillType: SkillType.AreaSkillAutomaticHits, cooldownMinutes: 4);
-        this.AddAreaSkillSettings(SkillNumber.Stun, true, 1.5f, 1.5f, 3f);
+        this.AddAreaSkillSettings(SkillNumber.ForceWave, true, 1f, 1f, 4f, useCasterAsCenter: true);
+        this.CreateSkill(SkillNumber.Stun, "Stun", CharacterClasses.All, distance: 4, abilityConsumption: 50, manaConsumption: 70, skillType: SkillType.Buff, cooldownMinutes: 4);
+        this.AddAreaSkillSettings(SkillNumber.Stun, true, 1.5f, 1.5f, 4f, useCasterAsCenter: true, useEuclideanRange: true);
         this.CreateSkill(SkillNumber.CancelStun, "Cancel Stun", CharacterClasses.All, abilityConsumption: 30, manaConsumption: 25, skillType: SkillType.Other, cooldownMinutes: 2);
         this.CreateSkill(SkillNumber.SwellMana, "Swell Mana", CharacterClasses.All, abilityConsumption: 30, manaConsumption: 35, cooldownMinutes: 4);
         this.CreateSkill(SkillNumber.Invisibility, "Invisibility", CharacterClasses.All, abilityConsumption: 60, manaConsumption: 80, cooldownMinutes: 5);
@@ -177,9 +182,9 @@ internal class SkillsInitializer : SkillsInitializerBase
         this.CreateSkill(SkillNumber.ManaRays, "Mana Rays", CharacterClasses.AllMGs, DamageType.Wizardry, 85, 6, 7, 130);
         this.CreateSkill(SkillNumber.FireBlast, "Fire Blast", CharacterClasses.AllLords, DamageType.Physical, 150, 6, 10, 30);
         this.CreateSkill(SkillNumber.PlasmaStorm, "Plasma Storm", CharacterClasses.AllMastersAndSecondClass, DamageType.Fenrir, damage: 60, distance: 6, abilityConsumption: 20, manaConsumption: 50, levelRequirement: 110, skillType: SkillType.AreaSkillAutomaticHits);
+        this.AddAreaSkillSettings(SkillNumber.PlasmaStorm, false, 0, 0, 0, maximumHitsPerAttack: 5, useCasterAsCenter: true, useEuclideanRange: true, delayPerHit: TimeSpan.FromMilliseconds(300));
         this.CreateSkill(SkillNumber.InfinityArrow, "Infinity Arrow", CharacterClasses.MuseElfAndHighElf, distance: 6, abilityConsumption: 10, manaConsumption: 50, levelRequirement: 220, skillType: SkillType.Buff, targetRestriction: SkillTargetRestriction.Self);
-        this.CreateSkill(SkillNumber.FireScream, "Fire Scream", CharacterClasses.AllLords, DamageType.Physical, 130, 6, 10, 45, energyRequirement: 70, leadershipRequirement: 150, skillType: SkillType.AreaSkillAutomaticHits);
-        this.AddAreaSkillSettings(SkillNumber.FireScream, true, 2f, 3f, 6f); // TODO: Add fireScream's explosion (Explosion79) damage effect
+        this.CreateSkill(SkillNumber.FireScream, "Fire Scream", CharacterClasses.AllLords, DamageType.Physical, 130, 6, 10, 45, energyRequirement: 70, leadershipRequirement: 150);
         this.CreateSkill(SkillNumber.Explosion79, "Explosion", CharacterClasses.AllLords, DamageType.Physical, distance: 2);
         this.CreateSkill(SkillNumber.SummonMonster, "Summon Monster", manaConsumption: 40, energyRequirement: 90);
         this.CreateSkill(SkillNumber.MagicAttackImmunity, "Magic Attack Immunity", manaConsumption: 40, energyRequirement: 90);
@@ -191,7 +196,9 @@ internal class SkillsInitializer : SkillsInitializerBase
         this.CreateSkill(SkillNumber.SpellofPursuit, "Spell of Pursuit", CharacterClasses.All, manaConsumption: 30, elementalModifier: ElementalType.Ice, cooldownMinutes: 10);
         this.CreateSkill(SkillNumber.ShieldBurn, "Shield-Burn", CharacterClasses.All, distance: 3, manaConsumption: 30, elementalModifier: ElementalType.Ice, cooldownMinutes: 5);
         this.CreateSkill(SkillNumber.DrainLife, "Drain Life", CharacterClasses.AllSummoners, DamageType.Wizardry, 35, 6, manaConsumption: 50, energyRequirement: 150, skillType: SkillType.AreaSkillExplicitTarget);
+        this.AddAreaSkillSettings(SkillNumber.DrainLife, false, 0, 0, 0, delayPerHit: TimeSpan.FromMilliseconds(700));
         this.CreateSkill(SkillNumber.ChainLightning, "Chain Lightning", CharacterClasses.AllSummoners, DamageType.Wizardry, 70, 6, manaConsumption: 85, energyRequirement: 245, skillType: SkillType.AreaSkillExplicitTarget, skillTarget: SkillTarget.Explicit);
+        this.AddAreaSkillSettings(SkillNumber.ChainLightning, false, 0, 0, 0, delayPerHit: TimeSpan.FromMilliseconds(200));
         this.CreateSkill(SkillNumber.DamageReflection, "Damage Reflection", CharacterClasses.AllSummoners, distance: 5, abilityConsumption: 10, manaConsumption: 40, energyRequirement: 375, skillType: SkillType.Buff);
         this.CreateSkill(SkillNumber.Berserker, "Berserker", CharacterClasses.AllSummoners, distance: 5, abilityConsumption: 50, manaConsumption: 100, energyRequirement: 620, skillType: SkillType.Buff, targetRestriction: SkillTargetRestriction.Self);
         this.CreateSkill(SkillNumber.Sleep, "Sleep", CharacterClasses.AllSummoners, distance: 6, abilityConsumption: 3, manaConsumption: 20, energyRequirement: 180, skillType: SkillType.Buff);
@@ -199,8 +206,10 @@ internal class SkillsInitializer : SkillsInitializerBase
         this.AddAreaSkillSettings(SkillNumber.Weakness, false, 0, 0, 0, maximumHitsPerAttack: 5, useTargetAreaFilter: true, targetAreaDiameter: 10);
         this.CreateSkill(SkillNumber.Innovation, "Innovation", CharacterClasses.AllSummoners, distance: 6, abilityConsumption: 15, manaConsumption: 70, energyRequirement: 912, skillType: SkillType.Buff);
         this.AddAreaSkillSettings(SkillNumber.Innovation, false, 0, 0, 0, maximumHitsPerAttack: 5, useTargetAreaFilter: true, targetAreaDiameter: 10);
-        this.CreateSkill(SkillNumber.Explosion223, "Explosion", CharacterClasses.AllSummoners, DamageType.Curse, 40, 6, 5, 90, energyRequirement: 100, elementalModifier: ElementalType.Fire); // Book of Samut's skill
-        this.CreateSkill(SkillNumber.Requiem, "Requiem", CharacterClasses.AllSummoners, DamageType.Curse, 65, 6, 10, 110, energyRequirement: 99, elementalModifier: ElementalType.Wind); // Book of Neil's skill
+        this.CreateSkill(SkillNumber.Explosion223, "Explosion", CharacterClasses.AllSummoners, DamageType.Curse, 40, 6, 5, 90, energyRequirement: 100, elementalModifier: ElementalType.Fire, skillType: SkillType.AreaSkillAutomaticHits); // Book of Samut's skill
+        this.AddAreaSkillSettings(SkillNumber.Explosion223, false, 0, 0, 0, useTargetAreaFilter: true, targetAreaDiameter: 4, useTargetAreaSquare: true, requireTargetAreaCenterInRange: true, delayPerHit: TimeSpan.FromMilliseconds(1000));
+        this.CreateSkill(SkillNumber.Requiem, "Requiem", CharacterClasses.AllSummoners, DamageType.Curse, 65, 6, 10, 110, energyRequirement: 99, elementalModifier: ElementalType.Wind, skillType: SkillType.AreaSkillAutomaticHits); // Book of Neil's skill
+        this.AddAreaSkillSettings(SkillNumber.Requiem, false, 0, 0, 0, useTargetAreaFilter: true, targetAreaDiameter: 4, useTargetAreaSquare: true, requireTargetAreaCenterInRange: true, delayPerHit: TimeSpan.FromMilliseconds(1000));
         this.CreateSkill(SkillNumber.Pollution, "Pollution", CharacterClasses.AllSummoners, DamageType.Curse, 80, 6, 15, 120, energyRequirement: 115, elementalModifier: ElementalType.Lightning, skillType: SkillType.AreaSkillAutomaticHits); // Book of Lagle's skill
         this.AddAreaSkillSettings(SkillNumber.Pollution, false, 0, 0, 0, useTargetAreaFilter: true, targetAreaDiameter: 6, guaranteedTargets: 4, maximumTargets: 8, additionalTargetChance: 0.5f, useTargetAreaSquare: true, requireTargetAreaCenterInRange: true);
         this.CreateSkill(SkillNumber.LightningShock, "Lightning Shock", CharacterClasses.AllSummoners, DamageType.Wizardry, 95, 6, 7, 115, energyRequirement: 823, elementalModifier: ElementalType.Lightning, skillType: SkillType.AreaSkillAutomaticHits);
@@ -210,25 +219,27 @@ internal class SkillsInitializer : SkillsInitializerBase
         this.CreateSkill(SkillNumber.ExpansionofWizardry, "Expansion of Wizardry", CharacterClasses.SoulMasterAndGrandMaster, distance: 6, abilityConsumption: 50, manaConsumption: 200, levelRequirement: 220, energyRequirement: 118, skillType: SkillType.Buff, targetRestriction: SkillTargetRestriction.Player, skillTarget: SkillTarget.ImplicitPlayer);
         this.CreateSkill(SkillNumber.Recovery, "Recovery", CharacterClasses.MuseElfAndHighElf, distance: 6, abilityConsumption: 10, manaConsumption: 40, levelRequirement: 100, energyRequirement: 37, skillType: SkillType.Regeneration, targetRestriction: SkillTargetRestriction.Player);
         this.CreateSkill(SkillNumber.MultiShot, "Multi-Shot", CharacterClasses.MuseElfAndHighElf, DamageType.Physical, 40, 6, 7, 10, 100, skillType: SkillType.AreaSkillAutomaticHits);
-        this.AddAreaSkillSettings(SkillNumber.MultiShot, true, 1f, 6f, 7f, projectileCount: 5);
+        this.AddAreaSkillSettings(SkillNumber.MultiShot, true, 1f, 6f, 7f, projectileCount: 5, useCasterAsCenter: true);
         this.CreateSkill(SkillNumber.FlameStrike, "Flame Strike", CharacterClasses.AllMGs, DamageType.Physical, 140, 3, 25, 20, 100, elementalModifier: ElementalType.Fire, skillType: SkillType.AreaSkillAutomaticHits);
-        this.AddAreaSkillSettings(SkillNumber.FlameStrike, true, 5f, 2f, 4f, minimumHitsPerTarget: 2, maximumHitsPerTarget: 2, guaranteedTargets: 8, additionalTargetChance: 0.5f);
+        this.AddAreaSkillSettings(SkillNumber.FlameStrike, true, 5f, 2f, 4f, minimumHitsPerTarget: 2, maximumHitsPerTarget: 2, guaranteedTargets: 8, additionalTargetChance: 0.5f, useCasterAsCenter: true);
         this.CreateSkill(SkillNumber.GiganticStorm, "Gigantic Storm", CharacterClasses.AllMGs, DamageType.Wizardry, 110, 6, 10, 120, 220, 118, elementalModifier: ElementalType.Wind, skillType: SkillType.AreaSkillAutomaticHits);
         this.AddAreaSkillSettings(SkillNumber.GiganticStorm, false, 0, 0, 0, useTargetAreaFilter: true, targetAreaDiameter: 12, guaranteedTargets: 8, maximumTargets: 12, additionalTargetChance: 0.5f, useTargetAreaSquare: true, requireTargetAreaCenterInRange: true, delayPerHit: TimeSpan.FromMilliseconds(400));
         this.CreateSkill(SkillNumber.ChaoticDiseier, "Chaotic Diseier", CharacterClasses.AllLords, DamageType.Physical, 190, 6, 15, 50, 100, 16, skillType: SkillType.AreaSkillAutomaticHits);
-        this.AddAreaSkillSettings(SkillNumber.ChaoticDiseier, true, 1.5f, 1.5f, 6f, guaranteedTargets: 8, additionalTargetChance: 0.5f, delayPerHit: TimeSpan.FromMilliseconds(200), explicitTargetAdditionalHits: 1, explicitTargetAdditionalHitDelay: TimeSpan.FromMilliseconds(300));
+        this.AddAreaSkillSettings(SkillNumber.ChaoticDiseier, true, 1.5f, 1.5f, 6f, guaranteedTargets: 8, additionalTargetChance: 0.5f, delayPerHit: TimeSpan.FromMilliseconds(200), explicitTargetAdditionalHits: 1, explicitTargetAdditionalHitDelay: TimeSpan.FromMilliseconds(300), useCasterAsCenter: true);
         this.CreateSkill(SkillNumber.DoppelgangerSelfExplosion, "Doppelganger Self Explosion", CharacterClasses.AllMGs, DamageType.Wizardry, 140, 3, 25, 20, 100, elementalModifier: ElementalType.Fire);
         this.CreateSkill(SkillNumber.KillingBlow, "Killing Blow", CharacterClasses.AllFighters, DamageType.Physical, distance: 2, manaConsumption: 9, elementalModifier: ElementalType.Earth);
         this.CreateSkill(SkillNumber.BeastUppercut, "Beast Uppercut", CharacterClasses.AllFighters, DamageType.Physical, distance: 2, manaConsumption: 9, elementalModifier: ElementalType.Fire);
         this.CreateSkill(SkillNumber.ChainDrive, "Chain Drive", CharacterClasses.AllFighters, DamageType.Physical, distance: 4, abilityConsumption: 20, manaConsumption: 15, levelRequirement: 150, elementalModifier: ElementalType.Ice);
         this.CreateSkill(SkillNumber.DarkSide, "Dark Side", CharacterClasses.AllFighters, DamageType.Physical, distance: 4, manaConsumption: 70, levelRequirement: 180, elementalModifier: ElementalType.Wind);
         this.CreateSkill(SkillNumber.DragonRoar, "Dragon Roar", CharacterClasses.AllFighters, DamageType.Physical, distance: 3, abilityConsumption: 30, manaConsumption: 50, levelRequirement: 150, elementalModifier: ElementalType.Earth, skillType: SkillType.AreaSkillAutomaticHits);
+        this.AddAreaSkillSettings(SkillNumber.DragonRoar, false, 0, 0, 0, minimumHitsPerTarget: 4, maximumHitsPerTarget: 4, guaranteedTargets: 4, maximumTargets: 8, additionalTargetChance: 0.5f, useTargetAreaFilter: true, targetAreaDiameter: 6, useTargetAreaSquare: true, requireTargetAreaCenterInRange: true);
         this.CreateSkill(SkillNumber.DragonSlasher, "Dragon Slasher", CharacterClasses.AllFighters, DamageType.Physical, distance: 4, abilityConsumption: 100, manaConsumption: 100, levelRequirement: 200, elementalModifier: ElementalType.Wind);
         this.CreateSkill(SkillNumber.IgnoreDefense, "Ignore Defense", CharacterClasses.AllFighters, DamageType.Physical, distance: 3, abilityConsumption: 10, manaConsumption: 50, levelRequirement: 120, energyRequirement: 404, skillType: SkillType.Buff, skillTarget: SkillTarget.ImplicitPlayer);
         this.CreateSkill(SkillNumber.IncreaseHealth, "Increase Health", CharacterClasses.AllFighters, DamageType.Physical, distance: 7, abilityConsumption: 10, manaConsumption: 50, levelRequirement: 80, energyRequirement: 132, skillType: SkillType.Buff, skillTarget: SkillTarget.ImplicitParty);
         this.CreateSkill(SkillNumber.IncreaseBlock, "Increase Block", CharacterClasses.AllFighters, DamageType.Physical, distance: 7, abilityConsumption: 10, manaConsumption: 50, levelRequirement: 50, energyRequirement: 80, skillType: SkillType.Buff, skillTarget: SkillTarget.ImplicitParty);
         this.CreateSkill(SkillNumber.Charge, "Charge", CharacterClasses.AllFighters, DamageType.Physical, 90, 4, 15, 20);
-        this.CreateSkill(SkillNumber.PhoenixShot, "Phoenix Shot", CharacterClasses.AllFighters, DamageType.Physical, distance: 4, manaConsumption: 30, elementalModifier: ElementalType.Earth, skillType: SkillType.AreaSkillExplicitTarget);
+        this.CreateSkill(SkillNumber.PhoenixShot, "Phoenix Shot", CharacterClasses.AllFighters, DamageType.Physical, distance: 4, manaConsumption: 30, elementalModifier: ElementalType.Earth, skillType: SkillType.AreaSkillAutomaticHits);
+        this.AddAreaSkillSettings(SkillNumber.PhoenixShot, false, 0, 0, 0, minimumHitsPerTarget: 4, maximumHitsPerTarget: 4, guaranteedTargets: 4, maximumTargets: 8, additionalTargetChance: 0.5f, useTargetAreaFilter: true, targetAreaDiameter: 4, useTargetAreaSquare: true, requireTargetAreaCenterInRange: true);
 
         // Generic monster skills:
         this.CreateSkill(SkillNumber.MonsterSkill, "Generic Monster Skill", distance: 5, skillType: SkillType.Other);
@@ -673,6 +684,7 @@ internal class SkillsInitializer : SkillsInitializerBase
         new BerserkerEffectInitializer(this.Context, this.GameConfiguration).Initialize();
         new WeaknessEffectInitializer(this.Context, this.GameConfiguration).Initialize();
         new SleepEffectInitializer(this.Context, this.GameConfiguration).Initialize();
+        new StunEffectInitializer(this.Context, this.GameConfiguration).Initialize();
         new WeaknessSummonerEffectInitializer(this.Context, this.GameConfiguration).Initialize();
         new InnovationEffectInitializer(this.Context, this.GameConfiguration).Initialize();
         new ReflectionEffectInitializer(this.Context, this.GameConfiguration).Initialize();

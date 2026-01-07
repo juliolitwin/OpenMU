@@ -26,9 +26,16 @@ public class ChainLightningSkillPlugIn : IAreaSkillPlugIn
     /// <inheritdoc />
     public async ValueTask AfterTargetGotAttackedAsync(IAttacker attacker, IAttackable target, SkillEntry skillEntry, Point targetAreaCenter, HitInfo? hitInfo)
     {
+        if (attacker is not Player player
+            || skillEntry.Skill is null
+            || target.CurrentMap is not { } map)
+        {
+            return;
+        }
+
         bool FilterTarget(IAttackable attackable)
         {
-            if (!attackable.IsAlive)
+            if (!attackable.IsAlive || attackable.IsAtSafezone())
             {
                 return false;
             }
@@ -61,30 +68,79 @@ public class ChainLightningSkillPlugIn : IAreaSkillPlugIn
             return false;
         }
 
-        var secondTarget = target.CurrentMap?.GetAttackablesInRange(target.Position, 2).FirstOrDefault(FilterTarget) ?? target;
-        var thirdTarget = secondTarget.CurrentMap?.GetAttackablesInRange(secondTarget.Position, 2).Where(FilterTarget).FirstOrDefault(t => t != secondTarget && t != target) ?? secondTarget;
+        bool IsValidMonsterTarget(IAttackable attackable)
+        {
+            if (!FilterTarget(attackable))
+            {
+                return false;
+            }
 
-        var observable = attacker as IObservable;
-        if (observable is null)
+            if (attackable is not (Monster or Destructible))
+            {
+                return false;
+            }
+
+            return attackable.CheckSkillTargetRestrictions(player, skillEntry.Skill);
+        }
+
+        IAttackable? secondCandidate = null;
+        IAttackable? thirdCandidate = null;
+        var candidates = map.GetAttackablesInRange(target.Position, 2)
+            .Where(t => t != target)
+            .Where(IsValidMonsterTarget)
+            .OrderBy(t => target.GetDistanceTo(t))
+            .ToList();
+
+        foreach (var candidate in candidates)
+        {
+            var dx = Math.Abs(candidate.Position.X - target.Position.X);
+            var dy = Math.Abs(candidate.Position.Y - target.Position.Y);
+
+            if (secondCandidate is null && dx <= 1 && dy <= 1)
+            {
+                secondCandidate = candidate;
+                if (thirdCandidate is not null)
+                {
+                    break;
+                }
+            }
+            else if (thirdCandidate is null && dx <= 2 && dy <= 2)
+            {
+                thirdCandidate = candidate;
+                if (secondCandidate is not null)
+                {
+                    break;
+                }
+            }
+        }
+
+        var secondTarget = secondCandidate ?? target;
+        var thirdTarget = thirdCandidate ?? secondTarget;
+
+        if (attacker is not IObservable observable)
         {
             return;
         }
 
-        await observable.ForEachWorldObserverAsync<IShowChainLightningPlugIn>(o => o.ShowLightningChainAnimationAsync(attacker, skillEntry.Skill!, [target, secondTarget, thirdTarget]), true).ConfigureAwait(false);
+        await observable.ForEachWorldObserverAsync<IShowChainLightningPlugIn>(o => o.ShowLightningChainAnimationAsync(attacker, skillEntry.Skill, [target, secondTarget, thirdTarget]), true).ConfigureAwait(false);
 
         _ = Task.Run(async () =>
         {
-            await Task.Delay(300).ConfigureAwait(false);
+            await Task.Delay(200).ConfigureAwait(false);
 
-            // first attack 70 %
-            await secondTarget.AttackByAsync(attacker, skillEntry, false, 0.7).ConfigureAwait(false);
-            await secondTarget.TryApplyElementalEffectsAsync(attacker, skillEntry).ConfigureAwait(false);
+            if (!secondTarget.IsAtSafezone() && secondTarget.IsActive())
+            {
+                await secondTarget.AttackByAsync(attacker, skillEntry, false, 0.7).ConfigureAwait(false);
+                await secondTarget.TryApplyElementalEffectsAsync(attacker, skillEntry).ConfigureAwait(false);
+            }
 
-            await Task.Delay(300).ConfigureAwait(false);
+            await Task.Delay(200).ConfigureAwait(false);
 
-            // second attack 50%
-            await thirdTarget.AttackByAsync(attacker, skillEntry, false, 0.5).ConfigureAwait(false);
-            await thirdTarget.TryApplyElementalEffectsAsync(attacker, skillEntry).ConfigureAwait(false);
+            if (!thirdTarget.IsAtSafezone() && thirdTarget.IsActive())
+            {
+                await thirdTarget.AttackByAsync(attacker, skillEntry, false, 0.5).ConfigureAwait(false);
+                await thirdTarget.TryApplyElementalEffectsAsync(attacker, skillEntry).ConfigureAwait(false);
+            }
         });
     }
 }

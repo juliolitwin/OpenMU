@@ -21,6 +21,13 @@ using MUnique.OpenMU.Pathfinding;
 public class AreaSkillAttackAction
 {
     private const int UndefinedTarget = 0xFFFF;
+    private const short ElectricSpikeSkillNumber = 65;
+    private const short StunSkillNumber = 67;
+    private const short CastleSiegeMapNumber = 30;
+    private const short LandOfTrialsMapNumber = 31;
+    private const int ElectricSpikePartyRange = 10;
+    private const float ElectricSpikePartyHealthLossFactor = 0.2f;
+    private const float ElectricSpikePartyManaLossFactor = 0.05f;
 
     private static readonly ConcurrentDictionary<AreaSkillSettings, FrustumBasedTargetFilter> FrustumFilters = new();
 
@@ -71,6 +78,8 @@ public class AreaSkillAttackAction
                && settings.MaximumNumberOfHitsPerTarget == 1
                && settings.MaximumNumberOfHitsPerAttack == 0
                && settings.DelayPerHit <= TimeSpan.Zero
+               && settings.RandomDelayPerHitMinimum <= TimeSpan.Zero
+               && settings.RandomDelayPerHitMaximum <= TimeSpan.Zero
                && Math.Abs(settings.HitChancePerDistanceMultiplier - 1.0) <= 0.00001f
                && settings.GuaranteedTargets == 0
                && settings.MaximumTargets == 0
@@ -132,7 +141,7 @@ public class AreaSkillAttackAction
 
         if (areaSkillSettings?.UseEuclideanRange == true)
         {
-            targetsInRange = targetsInRange.Where(a => a.GetDistanceTo(center) <= range);
+            targetsInRange = targetsInRange.Where(a => IsWithinEuclideanRange(center, a.Position, range));
         }
 
         if (areaSkillSettings is { UseFrustumFilter: true })
@@ -150,7 +159,7 @@ public class AreaSkillAttackAction
             }
             else
             {
-                targetsInRange = targetsInRange.Where(a => a.GetDistanceTo(center) <= halfDiameter);
+                targetsInRange = targetsInRange.Where(a => IsWithinEuclideanRange(center, a.Position, halfDiameter));
             }
         }
 
@@ -172,10 +181,20 @@ public class AreaSkillAttackAction
         var range = skill.Range + rangeBuffer;
         if (skill.AreaSkillSettings?.UseEuclideanRange == true)
         {
-            return player.GetDistanceTo(targetPosition) <= range;
+            return IsWithinEuclideanRange(player.Position, targetPosition, range);
         }
 
         return player.IsInRange(targetPosition, range);
+    }
+
+    private static bool IsWithinEuclideanRange(Point origin, Point target, double range)
+    {
+        if (range < 0)
+        {
+            return false;
+        }
+
+        return Math.Floor(origin.EuclideanDistanceTo(target)) <= range;
     }
 
     private async ValueTask PerformAutomaticHitsAsync(Player player, ushort extraTargetId, Point targetAreaCenter, SkillEntry skillEntry, Skill skill, byte rotation)
@@ -208,11 +227,21 @@ public class AreaSkillAttackAction
             return;
         }
 
+        var baseSkillNumber = skillEntry.GetBaseSkill().Number;
+        if (baseSkillNumber == StunSkillNumber)
+        {
+            var mapNumber = player.CurrentMap?.Definition.Number;
+            if (mapNumber != CastleSiegeMapNumber && mapNumber != LandOfTrialsMapNumber)
+            {
+                return;
+            }
+        }
+
         var areaSkillSettings = skill.AreaSkillSettings;
         if (areaSkillSettings?.RequireTargetAreaCenterInRange == true)
         {
             var center = areaSkillSettings.UseCasterAsCenter ? player.Position : targetAreaCenter;
-            if (player.GetDistanceTo(center) > skill.Range)
+            if (!IsWithinEuclideanRange(player.Position, center, skill.Range))
             {
                 return;
             }
@@ -225,6 +254,7 @@ public class AreaSkillAttackAction
         }
 
         IAttackable? extraTarget = null;
+        var anyHit = false;
         var targets = GetTargets(player, targetAreaCenter, skill, rotation, extraTargetId);
         if (areaSkillSettings is null || AreaSkillSettingsAreDefault(areaSkillSettings))
         {
@@ -237,11 +267,17 @@ public class AreaSkillAttackAction
                 }
 
                 await this.ApplySkillAsync(player, skillEntry, target, targetAreaCenter, isCombo).ConfigureAwait(false);
+                anyHit = true;
             }
         }
         else
         {
-            extraTarget = await this.AttackTargetsAsync(player, extraTargetId, targetAreaCenter, skillEntry, areaSkillSettings, targets, rotation, isCombo).ConfigureAwait(false);
+            (extraTarget, anyHit) = await this.AttackTargetsAsync(player, extraTargetId, targetAreaCenter, skillEntry, areaSkillSettings, targets, rotation, isCombo).ConfigureAwait(false);
+        }
+
+        if (anyHit && baseSkillNumber == ElectricSpikeSkillNumber)
+        {
+            ApplyElectricSpikePartyPenalty(player);
         }
 
         if (isCombo)
@@ -250,9 +286,10 @@ public class AreaSkillAttackAction
         }
     }
 
-    private async Task<IAttackable?> AttackTargetsAsync(Player player, ushort extraTargetId, Point targetAreaCenter, SkillEntry skillEntry, AreaSkillSettings areaSkillSettings, IEnumerable<IAttackable> targets, byte rotation, bool isCombo)
+    private async Task<(IAttackable? ExtraTarget, bool AnyHit)> AttackTargetsAsync(Player player, ushort extraTargetId, Point targetAreaCenter, SkillEntry skillEntry, AreaSkillSettings areaSkillSettings, IEnumerable<IAttackable> targets, byte rotation, bool isCombo)
     {
         IAttackable? extraTarget = null;
+        var anyHit = false;
         var attackCount = 0;
         var maxAttacks = areaSkillSettings.MaximumNumberOfHitsPerAttack == 0 ? int.MaxValue : areaSkillSettings.MaximumNumberOfHitsPerAttack;
         var currentDelay = TimeSpan.Zero;
@@ -260,6 +297,23 @@ public class AreaSkillAttackAction
         if (delayPerHit < TimeSpan.Zero)
         {
             delayPerHit = TimeSpan.Zero;
+        }
+
+        var randomDelayMinimum = areaSkillSettings.RandomDelayPerHitMinimum;
+        if (randomDelayMinimum < TimeSpan.Zero)
+        {
+            randomDelayMinimum = TimeSpan.Zero;
+        }
+
+        var randomDelayMaximum = areaSkillSettings.RandomDelayPerHitMaximum;
+        if (randomDelayMaximum < TimeSpan.Zero)
+        {
+            randomDelayMaximum = TimeSpan.Zero;
+        }
+
+        if (randomDelayMaximum < randomDelayMinimum)
+        {
+            randomDelayMaximum = randomDelayMinimum;
         }
 
         var explicitTargetAdditionalHits = areaSkillSettings.ExplicitTargetAdditionalHits;
@@ -347,7 +401,22 @@ public class AreaSkillAttackAction
                     }
 
                     var distanceDelay = areaSkillSettings.DelayPerOneDistance * player.GetDistanceTo(target);
-                    var attackDelay = currentDelay + distanceDelay + delayPerHit;
+                    var randomDelay = TimeSpan.Zero;
+                    if (randomDelayMaximum > TimeSpan.Zero)
+                    {
+                        var minMs = (int)Math.Round(randomDelayMinimum.TotalMilliseconds);
+                        var maxMs = (int)Math.Round(randomDelayMaximum.TotalMilliseconds);
+                        if (maxMs > minMs)
+                        {
+                            randomDelay = TimeSpan.FromMilliseconds(Rand.NextInt(minMs, maxMs + 1));
+                        }
+                        else if (minMs > 0)
+                        {
+                            randomDelay = TimeSpan.FromMilliseconds(minMs);
+                        }
+                    }
+
+                    var attackDelay = currentDelay + distanceDelay + delayPerHit + randomDelay;
                     attackCount++;
 
                     if (attackDelay == TimeSpan.Zero)
@@ -356,12 +425,14 @@ public class AreaSkillAttackAction
                         if (!target.IsAtSafezone() && target.IsActive())
                         {
                             await this.ApplySkillAsync(player, skillEntry, target, targetAreaCenter, isCombo).ConfigureAwait(false);
+                            anyHit = true;
                         }
                     }
                     else
                     {
                         // The most pragmatic approach is just spawning a Task for each hit.
                         // We have to see, how this works out in terms of performance.
+                        anyHit = true;
                         _ = Task.Run(async () =>
                         {
                             await Task.Delay(attackDelay).ConfigureAwait(false);
@@ -385,6 +456,7 @@ public class AreaSkillAttackAction
                             }
                             else
                             {
+                                anyHit = true;
                                 _ = Task.Run(async () =>
                                 {
                                     await Task.Delay(explicitTargetAdditionalDelay).ConfigureAwait(false);
@@ -402,7 +474,38 @@ public class AreaSkillAttackAction
             }
         }
 
-        return extraTarget;
+        return (extraTarget, anyHit);
+    }
+
+    private static void ApplyElectricSpikePartyPenalty(Player player)
+    {
+        if (player.Party is null || player.CurrentMap is null)
+        {
+            return;
+        }
+
+        foreach (var partyMember in player.Party.PartyList.OfType<Player>())
+        {
+            if (partyMember == player || partyMember.CurrentMap != player.CurrentMap)
+            {
+                continue;
+            }
+
+            if (player.GetDistanceTo(partyMember.Position) >= ElectricSpikePartyRange)
+            {
+                continue;
+            }
+
+            if (partyMember.Attributes is not { } attributes)
+            {
+                continue;
+            }
+
+            var healthLoss = attributes[Stats.CurrentHealth] * ElectricSpikePartyHealthLossFactor;
+            var manaLoss = attributes[Stats.CurrentMana] * ElectricSpikePartyManaLossFactor;
+            attributes[Stats.CurrentHealth] = Math.Max(0, attributes[Stats.CurrentHealth] - healthLoss);
+            attributes[Stats.CurrentMana] = Math.Max(0, attributes[Stats.CurrentMana] - manaLoss);
+        }
     }
 
     private static List<IAttackable> ApplyRandomTargetSelection(List<IAttackable> orderedTargets, AreaSkillSettings areaSkillSettings)

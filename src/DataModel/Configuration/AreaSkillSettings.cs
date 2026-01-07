@@ -84,6 +84,16 @@ public partial class AreaSkillSettings
     public TimeSpan DelayPerHit { get; set; }
 
     /// <summary>
+    /// Gets or sets the minimum random delay which is applied to each hit.
+    /// </summary>
+    public TimeSpan RandomDelayPerHitMinimum { get; set; }
+
+    /// <summary>
+    /// Gets or sets the maximum random delay which is applied to each hit.
+    /// </summary>
+    public TimeSpan RandomDelayPerHitMaximum { get; set; }
+
+    /// <summary>
     /// Gets or sets the minimum number of hits per target.
     /// </summary>
     public int MinimumNumberOfHitsPerTarget { get; set; }

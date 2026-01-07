@@ -466,6 +466,8 @@ public class AddSummonerBuffSkillsPlugIn : UpdatePlugInBase
         bool requireTargetAreaCenterInRange = false,
         bool useEuclideanRange = false,
         TimeSpan delayPerHit = default,
+        TimeSpan randomDelayPerHitMinimum = default,
+        TimeSpan randomDelayPerHitMaximum = default,
         int explicitTargetAdditionalHits = 0,
         TimeSpan explicitTargetAdditionalHitDelay = default)
     {
@@ -482,6 +484,8 @@ public class AddSummonerBuffSkillsPlugIn : UpdatePlugInBase
         areaSkillSettings.DelayPerOneDistance = delayPerOneDistance;
         areaSkillSettings.DelayBetweenHits = delayBetweenHits;
         areaSkillSettings.DelayPerHit = delayPerHit;
+        areaSkillSettings.RandomDelayPerHitMinimum = randomDelayPerHitMinimum;
+        areaSkillSettings.RandomDelayPerHitMaximum = randomDelayPerHitMaximum;
         areaSkillSettings.MinimumNumberOfHitsPerTarget = minimumHitsPerTarget;
         areaSkillSettings.MaximumNumberOfHitsPerTarget = maximumHitsPerTarget;
         areaSkillSettings.MaximumNumberOfHitsPerAttack = maximumHitsPerAttack;
