@@ -70,9 +70,14 @@ public class AreaSkillAttackAction
                && settings.MinimumNumberOfHitsPerTarget == 1
                && settings.MaximumNumberOfHitsPerTarget == 1
                && settings.MaximumNumberOfHitsPerAttack == 0
+               && settings.DelayPerHit <= TimeSpan.Zero
                && Math.Abs(settings.HitChancePerDistanceMultiplier - 1.0) <= 0.00001f
                && settings.GuaranteedTargets == 0
                && settings.MaximumTargets == 0
+               && Math.Abs(settings.AdditionalTargetChance - 1.0) <= 0.00001f
+               && settings.ProjectileCount <= 1
+               && settings.ExplicitTargetAdditionalHits == 0
+               && settings.ExplicitTargetAdditionalHitDelay <= TimeSpan.Zero
                && !settings.UseCasterAsCenter;
     }
 
@@ -84,7 +89,7 @@ public class AreaSkillAttackAction
         if (skill.SkillType == SkillType.AreaSkillExplicitTarget)
         {
             if (extraTarget?.CheckSkillTargetRestrictions(player, skill) is true
-                && player.IsInRange(extraTarget.Position, skill.Range + 2)
+                && IsTargetInSkillRange(player, extraTarget.Position, skill, 2)
                 && !extraTarget.IsAtSafezone())
             {
                 yield return extraTarget;
@@ -96,7 +101,7 @@ public class AreaSkillAttackAction
         // Include the explicit extra target if it's valid and in range
         if (extraTarget is not null
             && extraTarget.CheckSkillTargetRestrictions(player, skill)
-            && player.IsInRange(extraTarget.Position, skill.Range + 2)
+            && IsTargetInSkillRange(player, extraTarget.Position, skill, 2)
             && !extraTarget.IsAtSafezone())
         {
             yield return extraTarget;
@@ -118,11 +123,17 @@ public class AreaSkillAttackAction
     {
         var areaSkillSettings = skill.AreaSkillSettings;
         var center = areaSkillSettings?.UseCasterAsCenter == true ? player.Position : targetAreaCenter;
+        var range = skill.Range;
         var targetsInRange = player.CurrentMap?
-                    .GetAttackablesInRange(center, skill.Range)
+                    .GetAttackablesInRange(center, range)
                     .Where(a => a != player)
                     .Where(a => !a.IsAtSafezone())
             ?? [];
+
+        if (areaSkillSettings?.UseEuclideanRange == true)
+        {
+            targetsInRange = targetsInRange.Where(a => a.GetDistanceTo(center) <= range);
+        }
 
         if (areaSkillSettings is { UseFrustumFilter: true })
         {
@@ -132,7 +143,15 @@ public class AreaSkillAttackAction
 
         if (areaSkillSettings is { UseTargetAreaFilter: true })
         {
-            targetsInRange = targetsInRange.Where(a => a.GetDistanceTo(center) < areaSkillSettings.TargetAreaDiameter * 0.5f);
+            var halfDiameter = areaSkillSettings.TargetAreaDiameter * 0.5f;
+            if (areaSkillSettings.UseTargetAreaSquare)
+            {
+                targetsInRange = targetsInRange.Where(a => Math.Abs(a.Position.X - center.X) <= halfDiameter && Math.Abs(a.Position.Y - center.Y) <= halfDiameter);
+            }
+            else
+            {
+                targetsInRange = targetsInRange.Where(a => a.GetDistanceTo(center) <= halfDiameter);
+            }
         }
 
         if (!player.GameContext.Configuration.AreaSkillHitsPlayer)
@@ -146,6 +165,17 @@ public class AreaSkillAttackAction
         targetsInRange = targetsInRange.Where(target => target.CheckSkillTargetRestrictions(player, skill));
 
         return targetsInRange;
+    }
+
+    private static bool IsTargetInSkillRange(Player player, Point targetPosition, Skill skill, int rangeBuffer)
+    {
+        var range = skill.Range + rangeBuffer;
+        if (skill.AreaSkillSettings?.UseEuclideanRange == true)
+        {
+            return player.GetDistanceTo(targetPosition) <= range;
+        }
+
+        return player.IsInRange(targetPosition, range);
     }
 
     private async ValueTask PerformAutomaticHitsAsync(Player player, ushort extraTargetId, Point targetAreaCenter, SkillEntry skillEntry, Skill skill, byte rotation)
@@ -178,6 +208,16 @@ public class AreaSkillAttackAction
             return;
         }
 
+        var areaSkillSettings = skill.AreaSkillSettings;
+        if (areaSkillSettings?.RequireTargetAreaCenterInRange == true)
+        {
+            var center = areaSkillSettings.UseCasterAsCenter ? player.Position : targetAreaCenter;
+            if (player.GetDistanceTo(center) > skill.Range)
+            {
+                return;
+            }
+        }
+
         bool isCombo = false;
         if (player.ComboState is { } comboState)
         {
@@ -186,8 +226,7 @@ public class AreaSkillAttackAction
 
         IAttackable? extraTarget = null;
         var targets = GetTargets(player, targetAreaCenter, skill, rotation, extraTargetId);
-        if (skill.AreaSkillSettings is not { } areaSkillSettings
-            || AreaSkillSettingsAreDefault(areaSkillSettings))
+        if (areaSkillSettings is null || AreaSkillSettingsAreDefault(areaSkillSettings))
         {
             // Just hit all targets once.
             foreach (var target in targets)
@@ -217,6 +256,23 @@ public class AreaSkillAttackAction
         var attackCount = 0;
         var maxAttacks = areaSkillSettings.MaximumNumberOfHitsPerAttack == 0 ? int.MaxValue : areaSkillSettings.MaximumNumberOfHitsPerAttack;
         var currentDelay = TimeSpan.Zero;
+        var delayPerHit = areaSkillSettings.DelayPerHit;
+        if (delayPerHit < TimeSpan.Zero)
+        {
+            delayPerHit = TimeSpan.Zero;
+        }
+
+        var explicitTargetAdditionalHits = areaSkillSettings.ExplicitTargetAdditionalHits;
+        if (explicitTargetAdditionalHits < 0)
+        {
+            explicitTargetAdditionalHits = 0;
+        }
+
+        var explicitTargetAdditionalDelay = areaSkillSettings.ExplicitTargetAdditionalHitDelay;
+        if (explicitTargetAdditionalDelay < TimeSpan.Zero)
+        {
+            explicitTargetAdditionalDelay = TimeSpan.Zero;
+        }
 
         // Order targets by distance to process nearest targets first
         var orderedTargets = targets.ToList();
@@ -291,7 +347,7 @@ public class AreaSkillAttackAction
                     }
 
                     var distanceDelay = areaSkillSettings.DelayPerOneDistance * player.GetDistanceTo(target);
-                    var attackDelay = currentDelay + distanceDelay;
+                    var attackDelay = currentDelay + distanceDelay + delayPerHit;
                     attackCount++;
 
                     if (attackDelay == TimeSpan.Zero)
@@ -315,6 +371,31 @@ public class AreaSkillAttackAction
                             }
                         });
                     }
+
+                    if (explicitTargetAdditionalHits > 0 && target.Id == extraTargetId)
+                    {
+                        for (int i = 0; i < explicitTargetAdditionalHits; i++)
+                        {
+                            if (explicitTargetAdditionalDelay == TimeSpan.Zero)
+                            {
+                                if (!target.IsAtSafezone() && target.IsActive())
+                                {
+                                    await this.ApplySkillAsync(player, skillEntry, target, targetAreaCenter, isCombo).ConfigureAwait(false);
+                                }
+                            }
+                            else
+                            {
+                                _ = Task.Run(async () =>
+                                {
+                                    await Task.Delay(explicitTargetAdditionalDelay).ConfigureAwait(false);
+                                    if (!target.IsAtSafezone() && target.IsActive())
+                                    {
+                                        await this.ApplySkillAsync(player, skillEntry, target, targetAreaCenter, isCombo).ConfigureAwait(false);
+                                    }
+                                });
+                            }
+                        }
+                    }
                 }
 
                 currentDelay += areaSkillSettings.DelayBetweenHits;
@@ -326,13 +407,22 @@ public class AreaSkillAttackAction
 
     private static List<IAttackable> ApplyRandomTargetSelection(List<IAttackable> orderedTargets, AreaSkillSettings areaSkillSettings)
     {
-        if (areaSkillSettings.MaximumTargets <= 0)
+        var maximumTargets = areaSkillSettings.MaximumTargets;
+        var guaranteedTargets = areaSkillSettings.GuaranteedTargets;
+        var additionalChance = areaSkillSettings.AdditionalTargetChance;
+
+        if (maximumTargets <= 0
+            && guaranteedTargets <= 0
+            && additionalChance >= 1.0f)
         {
             return orderedTargets;
         }
 
-        var maximumTargets = areaSkillSettings.MaximumTargets;
-        var guaranteedTargets = areaSkillSettings.GuaranteedTargets;
+        if (maximumTargets <= 0)
+        {
+            maximumTargets = orderedTargets.Count;
+        }
+
         if (guaranteedTargets < 0)
         {
             guaranteedTargets = 0;
@@ -343,7 +433,6 @@ public class AreaSkillAttackAction
             maximumTargets = guaranteedTargets;
         }
 
-        var additionalChance = areaSkillSettings.AdditionalTargetChance;
         if (additionalChance < 0)
         {
             additionalChance = 0;

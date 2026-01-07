@@ -120,11 +120,17 @@ internal abstract class SkillsInitializerBase : InitializerBase
     /// <param name="hitChancePerDistanceMultiplier">The hit chance per distance multiplier.</param>
         /// <param name="useTargetAreaFilter">If set to <c>true</c>, the skill should use a target area filter.</param>
         /// <param name="targetAreaDiameter">The target area diameter.</param>
-        /// <param name="projectileCount">The number of projectiles/arrows. When greater than 1, they are evenly distributed within the frustum.</param>
-        /// <param name="guaranteedTargets">The number of targets which are always hit when random target selection is enabled.</param>
-        /// <param name="maximumTargets">The maximum number of targets to consider for random selection.</param>
-        /// <param name="additionalTargetChance">The chance between 0 and 1 to hit targets beyond the guaranteed ones.</param>
-        /// <param name="useCasterAsCenter">If set to <c>true</c>, the caster position is used as the target area center.</param>
+    /// <param name="projectileCount">The number of projectiles/arrows. When greater than 1, they are evenly distributed within the frustum.</param>
+    /// <param name="guaranteedTargets">The number of targets which are always hit when random target selection is enabled.</param>
+    /// <param name="maximumTargets">The maximum number of targets to consider for random selection.</param>
+    /// <param name="additionalTargetChance">The chance between 0 and 1 to hit targets beyond the guaranteed ones.</param>
+    /// <param name="useCasterAsCenter">If set to <c>true</c>, the caster position is used as the target area center.</param>
+    /// <param name="useTargetAreaSquare">If set to <c>true</c>, the target area filter uses a square instead of a circle.</param>
+    /// <param name="requireTargetAreaCenterInRange">If set to <c>true</c>, the target area center must be in range of the caster.</param>
+    /// <param name="useEuclideanRange">If set to <c>true</c>, euclidean range checks are enforced when selecting targets.</param>
+    /// <param name="delayPerHit">The fixed delay which is applied to each hit.</param>
+    /// <param name="explicitTargetAdditionalHits">The number of additional hits which are only applied to the explicit target.</param>
+    /// <param name="explicitTargetAdditionalHitDelay">The delay for additional hits on the explicit target.</param>
     protected void AddAreaSkillSettings(
         SkillNumber skillNumber,
         bool useFrustumFilter,
@@ -144,7 +150,13 @@ internal abstract class SkillsInitializerBase : InitializerBase
         int guaranteedTargets = 0,
         int maximumTargets = 0,
         float additionalTargetChance = 1.0f,
-        bool useCasterAsCenter = false)
+        bool useCasterAsCenter = false,
+        bool useTargetAreaSquare = false,
+        bool requireTargetAreaCenterInRange = false,
+        bool useEuclideanRange = false,
+        TimeSpan delayPerHit = default,
+        int explicitTargetAdditionalHits = 0,
+        TimeSpan explicitTargetAdditionalHitDelay = default)
     {
         var skill = this.GameConfiguration.Skills.First(s => s.Number == (short)skillNumber);
         var areaSkillSettings = this.Context.CreateNew<AreaSkillSettings>();
@@ -156,9 +168,11 @@ internal abstract class SkillsInitializerBase : InitializerBase
         areaSkillSettings.FrustumDistance = frustumDistance;
         areaSkillSettings.UseTargetAreaFilter = useTargetAreaFilter;
         areaSkillSettings.TargetAreaDiameter = targetAreaDiameter;
+        areaSkillSettings.UseTargetAreaSquare = useTargetAreaSquare;
         areaSkillSettings.UseDeferredHits = useDeferredHits;
         areaSkillSettings.DelayPerOneDistance = delayPerOneDistance;
         areaSkillSettings.DelayBetweenHits = delayBetweenHits;
+        areaSkillSettings.DelayPerHit = delayPerHit;
         areaSkillSettings.MinimumNumberOfHitsPerTarget = minimumHitsPerTarget;
         areaSkillSettings.MaximumNumberOfHitsPerTarget = maximumHitsPerTarget;
         areaSkillSettings.MaximumNumberOfHitsPerAttack = maximumHitsPerAttack;
@@ -168,6 +182,10 @@ internal abstract class SkillsInitializerBase : InitializerBase
         areaSkillSettings.MaximumTargets = maximumTargets;
         areaSkillSettings.AdditionalTargetChance = additionalTargetChance;
         areaSkillSettings.UseCasterAsCenter = useCasterAsCenter;
+        areaSkillSettings.RequireTargetAreaCenterInRange = requireTargetAreaCenterInRange;
+        areaSkillSettings.UseEuclideanRange = useEuclideanRange;
+        areaSkillSettings.ExplicitTargetAdditionalHits = explicitTargetAdditionalHits;
+        areaSkillSettings.ExplicitTargetAdditionalHitDelay = explicitTargetAdditionalHitDelay;
     }
 
     private void ApplyElementalModifier(ElementalType elementalModifier, Skill skill)

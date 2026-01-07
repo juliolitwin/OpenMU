@@ -38,9 +38,24 @@ public partial class AreaSkillSettings
     public bool UseTargetAreaFilter { get; set; }
 
     /// <summary>
+    /// Gets or sets a value indicating whether a square target area is used instead of a circular one.
+    /// </summary>
+    public bool UseTargetAreaSquare { get; set; }
+
+    /// <summary>
     /// Gets or sets a value indicating whether the target area center should be the caster position.
     /// </summary>
     public bool UseCasterAsCenter { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the target area center must be within skill range of the caster.
+    /// </summary>
+    public bool RequireTargetAreaCenterInRange { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether to enforce euclidean range checks when selecting targets.
+    /// </summary>
+    public bool UseEuclideanRange { get; set; }
 
     /// <summary>
     /// Gets or sets the target area diameter.
@@ -62,6 +77,11 @@ public partial class AreaSkillSettings
     /// Gets or sets the delay between hits.
     /// </summary>
     public TimeSpan DelayBetweenHits { get; set; }
+
+    /// <summary>
+    /// Gets or sets the fixed delay which is applied to each hit.
+    /// </summary>
+    public TimeSpan DelayPerHit { get; set; }
 
     /// <summary>
     /// Gets or sets the minimum number of hits per target.
@@ -94,6 +114,16 @@ public partial class AreaSkillSettings
     /// when random target selection is enabled.
     /// </summary>
     public float AdditionalTargetChance { get; set; } = 1.0f;
+
+    /// <summary>
+    /// Gets or sets the number of additional hits which are only applied to the explicit target.
+    /// </summary>
+    public int ExplicitTargetAdditionalHits { get; set; }
+
+    /// <summary>
+    /// Gets or sets the delay for additional hits on the explicit target.
+    /// </summary>
+    public TimeSpan ExplicitTargetAdditionalHitDelay { get; set; }
 
     /// <summary>
     /// Gets or sets the hit chance per distance multiplier.

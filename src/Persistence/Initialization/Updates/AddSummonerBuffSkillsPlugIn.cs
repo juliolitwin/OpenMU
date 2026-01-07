@@ -461,7 +461,13 @@ public class AddSummonerBuffSkillsPlugIn : UpdatePlugInBase
         int maximumHitsPerAttack = default,
         float hitChancePerDistanceMultiplier = 1.0f,
         bool useTargetAreaFilter = false,
-        float targetAreaDiameter = default)
+        float targetAreaDiameter = default,
+        bool useTargetAreaSquare = false,
+        bool requireTargetAreaCenterInRange = false,
+        bool useEuclideanRange = false,
+        TimeSpan delayPerHit = default,
+        int explicitTargetAdditionalHits = 0,
+        TimeSpan explicitTargetAdditionalHitDelay = default)
     {
         var areaSkillSettings = context.CreateNew<AreaSkillSettings>();
 
@@ -471,13 +477,19 @@ public class AddSummonerBuffSkillsPlugIn : UpdatePlugInBase
         areaSkillSettings.FrustumDistance = frustumDistance;
         areaSkillSettings.UseTargetAreaFilter = useTargetAreaFilter;
         areaSkillSettings.TargetAreaDiameter = targetAreaDiameter;
+        areaSkillSettings.UseTargetAreaSquare = useTargetAreaSquare;
         areaSkillSettings.UseDeferredHits = useDeferredHits;
         areaSkillSettings.DelayPerOneDistance = delayPerOneDistance;
         areaSkillSettings.DelayBetweenHits = delayBetweenHits;
+        areaSkillSettings.DelayPerHit = delayPerHit;
         areaSkillSettings.MinimumNumberOfHitsPerTarget = minimumHitsPerTarget;
         areaSkillSettings.MaximumNumberOfHitsPerTarget = maximumHitsPerTarget;
         areaSkillSettings.MaximumNumberOfHitsPerAttack = maximumHitsPerAttack;
         areaSkillSettings.HitChancePerDistanceMultiplier = hitChancePerDistanceMultiplier;
+        areaSkillSettings.RequireTargetAreaCenterInRange = requireTargetAreaCenterInRange;
+        areaSkillSettings.UseEuclideanRange = useEuclideanRange;
+        areaSkillSettings.ExplicitTargetAdditionalHits = explicitTargetAdditionalHits;
+        areaSkillSettings.ExplicitTargetAdditionalHitDelay = explicitTargetAdditionalHitDelay;
 
         return areaSkillSettings;
     }
