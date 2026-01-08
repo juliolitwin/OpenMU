@@ -97,7 +97,8 @@ public class AreaSkillAttackAction
 
         if (skill.SkillType == SkillType.AreaSkillExplicitTarget)
         {
-            if (extraTarget?.CheckSkillTargetRestrictions(player, skill) is true
+            if (extraTarget is not null
+                && extraTarget.CheckSkillTargetRestrictions(player, skill)
                 && IsTargetInSkillRange(player, extraTarget.Position, skill, 2)
                 && !extraTarget.IsAtSafezone())
             {
@@ -163,17 +164,23 @@ public class AreaSkillAttackAction
             }
         }
 
-        if (!player.GameContext.Configuration.AreaSkillHitsPlayer)
-        {
-            targetsInRange = targetsInRange.Where(a => a is not Player);
-        }
-
-        // Exclude summoned monsters from implicit area attacks
-        targetsInRange = targetsInRange.Where(target => target is not Monster { SummonedBy: not null });
-
-        targetsInRange = targetsInRange.Where(target => target.CheckSkillTargetRestrictions(player, skill));
+        targetsInRange = targetsInRange.Where(target => IsValidAreaSkillTarget(player, skill, target));
 
         return targetsInRange;
+    }
+
+    private static bool IsValidAreaSkillTarget(Player player, Skill skill, IAttackable target)
+    {
+        var restrictionTarget = target is Monster { SummonedBy: not null } summoned
+            ? summoned.SummonedBy
+            : target;
+
+        if (!player.GameContext.Configuration.AreaSkillHitsPlayer && restrictionTarget is Player)
+        {
+            return false;
+        }
+
+        return restrictionTarget.CheckSkillTargetRestrictions(player, skill);
     }
 
     private static bool IsTargetInSkillRange(Player player, Point targetPosition, Skill skill, int rangeBuffer)
@@ -491,7 +498,7 @@ public class AreaSkillAttackAction
                 continue;
             }
 
-            if (player.GetDistanceTo(partyMember.Position) >= ElectricSpikePartyRange)
+            if (Math.Floor(player.GetDistanceTo(partyMember.Position)) >= ElectricSpikePartyRange)
             {
                 continue;
             }

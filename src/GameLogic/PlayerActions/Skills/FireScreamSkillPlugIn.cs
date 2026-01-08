@@ -50,8 +50,7 @@ public class FireScreamSkillPlugIn : TargetedSkillPluginBase
         }
 
         var skillEntry = player.SkillList?.GetSkill(skillId);
-        var skill = skillEntry?.Skill;
-        if (skill is null || skill.SkillType == SkillType.PassiveBoost)
+        if (skillEntry is null || skillEntry.Skill is not { } skill || skill.SkillType == SkillType.PassiveBoost)
         {
             return;
         }

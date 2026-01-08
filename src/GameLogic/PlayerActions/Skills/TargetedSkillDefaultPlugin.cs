@@ -5,6 +5,7 @@
 namespace MUnique.OpenMU.GameLogic.PlayerActions.Skills;
 
 using System.Runtime.InteropServices;
+using MUnique.OpenMU.DataModel.Configuration;
 using MUnique.OpenMU.GameLogic.Attributes;
 using MUnique.OpenMU.GameLogic.NPC;
 using MUnique.OpenMU.GameLogic.PlugIns;
@@ -240,6 +241,12 @@ public class TargetedSkillDefaultPlugin : TargetedSkillPluginBase
         var skill = skillEntry.Skill;
         var success = false;
         var targets = this.DetermineTargets(player, targetedTarget, skill);
+        var areaSkillSettings = skill.AreaSkillSettings;
+        var useDelayedImplicitHits = skill.Target == SkillTarget.ExplicitWithImplicitInRange
+            && areaSkillSettings is not null
+            && (areaSkillSettings.DelayPerHit > TimeSpan.Zero
+                || areaSkillSettings.RandomDelayPerHitMinimum > TimeSpan.Zero
+                || areaSkillSettings.RandomDelayPerHitMaximum > TimeSpan.Zero);
         bool isCombo = false;
         if (skill.SkillType is SkillType.DirectHit or SkillType.CastleSiegeSkill
             && player.ComboState is { } comboState
@@ -262,6 +269,44 @@ public class TargetedSkillDefaultPlugin : TargetedSkillPluginBase
 
                 if (!target.IsAtSafezone() && !player.IsAtSafezone() && target != player)
                 {
+                    if (useDelayedImplicitHits && target != targetedTarget)
+                    {
+                        if (!target.CheckSkillTargetRestrictions(player, skill))
+                        {
+                            continue;
+                        }
+
+                        if (areaSkillSettings!.UseEuclideanRange
+                            && Math.Floor(targetedTarget.Position.EuclideanDistanceTo(target.Position)) > skill.ImplicitTargetRange)
+                        {
+                            continue;
+                        }
+
+                        var delay = GetImplicitHitDelay(areaSkillSettings);
+                        if (delay == TimeSpan.Zero)
+                        {
+                            await target.AttackByAsync(player, skillEntry, isCombo).ConfigureAwait(false);
+                            player.LastAttackedTarget.SetTarget(target);
+                            success = await target.TryApplyElementalEffectsAsync(player, skillEntry).ConfigureAwait(false) || success;
+                        }
+                        else
+                        {
+                            var delayedTarget = target;
+                            _ = Task.Run(async () =>
+                            {
+                                await Task.Delay(delay).ConfigureAwait(false);
+                                if (!delayedTarget.IsAtSafezone() && delayedTarget.IsActive())
+                                {
+                                    await delayedTarget.AttackByAsync(player, skillEntry, isCombo).ConfigureAwait(false);
+                                    player.LastAttackedTarget.SetTarget(delayedTarget);
+                                    await delayedTarget.TryApplyElementalEffectsAsync(player, skillEntry).ConfigureAwait(false);
+                                }
+                            });
+                        }
+
+                        continue;
+                    }
+
                     await target.AttackByAsync(player, skillEntry, isCombo).ConfigureAwait(false);
                     player.LastAttackedTarget.SetTarget(target);
                     success = await target.TryApplyElementalEffectsAsync(player, skillEntry).ConfigureAwait(false) || success;
@@ -304,5 +349,47 @@ public class TargetedSkillDefaultPlugin : TargetedSkillPluginBase
         }
 
         return success;
+    }
+
+    private static TimeSpan GetImplicitHitDelay(AreaSkillSettings areaSkillSettings)
+    {
+        var delay = areaSkillSettings.DelayPerHit;
+        if (delay < TimeSpan.Zero)
+        {
+            delay = TimeSpan.Zero;
+        }
+
+        var randomDelayMinimum = areaSkillSettings.RandomDelayPerHitMinimum;
+        if (randomDelayMinimum < TimeSpan.Zero)
+        {
+            randomDelayMinimum = TimeSpan.Zero;
+        }
+
+        var randomDelayMaximum = areaSkillSettings.RandomDelayPerHitMaximum;
+        if (randomDelayMaximum < TimeSpan.Zero)
+        {
+            randomDelayMaximum = TimeSpan.Zero;
+        }
+
+        if (randomDelayMaximum < randomDelayMinimum)
+        {
+            randomDelayMaximum = randomDelayMinimum;
+        }
+
+        if (randomDelayMaximum > TimeSpan.Zero)
+        {
+            var minMs = (int)Math.Round(randomDelayMinimum.TotalMilliseconds);
+            var maxMs = (int)Math.Round(randomDelayMaximum.TotalMilliseconds);
+            if (maxMs > minMs)
+            {
+                delay += TimeSpan.FromMilliseconds(Rand.NextInt(minMs, maxMs + 1));
+            }
+            else if (minMs > 0)
+            {
+                delay += TimeSpan.FromMilliseconds(minMs);
+            }
+        }
+
+        return delay;
     }
 }
